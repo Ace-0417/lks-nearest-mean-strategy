@@ -1,0 +1,63 @@
+{
+  "illustrative_scenario": {
+    "N": 12368,
+    "fine_grid_reps": 180000,
+    "requested_quote_reps": 600000,
+    "mean": 164.7407642291425,
+    "mean_sd": 0.5705923739183472,
+    "mean_95_interval": [
+      163.6312667038229,
+      165.86621134593446
+    ],
+    "analytical_mean": 164.74200000000005,
+    "best_fine": {
+      "bid": 164.71,
+      "p_win": 0.0061465517750539335,
+      "p_win_pct": 0.6146551775053933,
+      "mean_if_win": 164.7099425007373,
+      "conditional_surplus_v1500": 1335.2900574992627,
+      "unconditional_utility_v1500": 8.207429473133962,
+      "relative_utility": 1.0
+    },
+    "smoothed_choice": {
+      "window_cents": 15,
+      "bid": 164.67,
+      "smoothed_utility_v1500": 7.963493611481623,
+      "near_99pct": [
+        164.64,
+        164.78
+      ],
+      "near_97_5pct": [
+        164.61,
+        164.89
+      ]
+    },
+    "operational_choice": {
+      "bid": 164.74,
+      "rule": "non-integer analytical centre within the 99% smoothed-utility plateau",
+      "smoothed_grid": {
+        "window_cents": 15,
+        "bid": 164.67,
+        "smoothed_utility_v1500": 7.963493611481623,
+        "near_99pct": [
+          164.64,
+          164.78
+        ],
+        "near_97_5pct": [
+          164.61,
+          164.89
+        ]
+      }
+    },
+    "component_probs": [
+      0.541,
+      0.259,
+      0.10900000000000001,
+      0.091
+    ]
+  },
+  "participants": [],
+  "convergence": [],
+  "sensitivity": [],
+  "method_note": "Monte Carlo samples latent strategy counts, shared-signal Dirichlet weights, and aggregate bid sums. Component shares are scenario inputs, not measured audience demographics. Conditional closer-bid probabilities use the discrete bid CDF; tie multiplicity uses a Poisson approximation."
+}

@@ -36,7 +36,7 @@ python src/lks_tennis_mc.py --quick --section main --output-dir work/quick-check
 
 `--quick` 会减少重复次数，因此结果只应与参考结果比较数量级，不应逐位相等。
 
-标准分析分为两组：
+主模型默认使用活动截止后页面显示的 LOT 18 报价人数 `N=12,368`；可用 `--participants` 更新。标准分析分为两组：
 
 ```bash
 # 单次报价、人数与单因素敏感性
@@ -60,7 +60,7 @@ python src/lks_tennis_mc.py --quick --section main \
 
 这些参数分别表示较高报价组件占比、共同信号组件占比和相对公开价格锚的偏离尺度。默认的 35% 与 20% 分别承接原始“网球兴趣者”和“AI 辅助者”先验，但在模型中只作为报价机制的代理参数。
 
-指定任一覆盖参数时，程序会把逐分细网格自动移到该场景的理论均值附近；默认路线仍使用 163.50–165.50 元网格，以保持仓库参考结果可复现。程序输出的 `smoothed_choice` 使用 15 个相邻分币的效用均值选择稳定中心。
+指定任一覆盖参数时，程序会把逐分细网格自动移到该场景的理论均值附近；默认路线仍使用 163.50–165.50 元网格，以保持仓库参考结果可复现。程序输出的 `smoothed_choice` 给出 15 个相邻分币的效用平滑结果；`operational_choice` 在其 99% 近优平台内选择最接近解析中心的分币。
 
 ## 3. 输出对应关系
 
@@ -72,6 +72,7 @@ python src/lks_tennis_mc.py --quick --section main \
 | `replication_convergence.csv` | 不同重复次数的收敛检查 |
 | `one_way_sensitivity.csv` | 参数单因素敏感性 |
 | `direct_person_level_validation.csv` | 显式生成逐人报价的校验 |
+| `simulation_summary.json` | 当前运行的解析中心、原始极值、平滑区间与操作报价 |
 
 ## 4. 推荐的复核顺序
 

@@ -46,7 +46,7 @@ def make_svg() -> str:
         '<rect width="1120" height="620" fill="#ffffff"/>',
         '<text class="title" x="560" y="46" text-anchor="middle">辅助先验路线的单次报价模拟结果</text>',
         '<text class="axis" x="560" y="72" text-anchor="middle">35%/20% 为可替换先验；数值不是现实活动的保证概率</text>',
-        '<text class="subtitle" x="74" y="98">报价与单次中标率（N=25,000）</text>',
+        '<text class="subtitle" x="74" y="98">报价与单次中标率（N=12,368）</text>',
         '<text class="subtitle" x="630" y="98">参与人数与最佳单次报价中标率</text>',
         f'<rect class="frame" x="{left_x}" y="{top_y}" width="{panel_w}" height="{panel_h}"/>',
         f'<rect class="frame" x="{right_x}" y="{top_y}" width="{panel_w}" height="{panel_h}"/>',
@@ -93,9 +93,9 @@ def make_svg() -> str:
         163.8,
         165.3,
         0.0,
-        0.42,
+        0.70,
         [(164.0, "164.0"), (164.5, "164.5"), (165.0, "165.0"), (165.3, "165.3")],
-        [0.0, 0.1, 0.2, 0.3, 0.4],
+        [0.0, 0.2, 0.4, 0.6],
         "单次报价（元）",
     )
     for bid, value in quote_points:

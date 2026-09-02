@@ -56,6 +56,9 @@ DEFAULT_CANDIDATES = [
     164.90, 165.00, 166.00, 168.00, 170.00,
 ]
 
+# Final public count shown for LOT 18 after the activity deadline.
+REFERENCE_N = 12_368
+
 
 def norm_cdf(x: np.ndarray) -> np.ndarray:
     """Fast vector normal CDF, max absolute error about 7.5e-8."""
@@ -302,6 +305,28 @@ def smoothed_choice(rows, window: int = 15):
     }
 
 
+def operational_choice(m: Scenario, rows, window: int = 15):
+    """Prefer the analytical centre when it lies on the simulation plateau."""
+    smooth = smoothed_choice(rows, window)
+    analytical_bid = round(scenario_expected_mean(m), 2)
+    lower, upper = smooth["near_99pct"]
+    is_whole_yuan = math.isclose(analytical_bid, round(analytical_bid))
+    if lower <= analytical_bid <= upper and not is_whole_yuan:
+        selected = analytical_bid
+        rule = "non-integer analytical centre within the 99% smoothed-utility plateau"
+    else:
+        eligible = [
+            row for row in rows
+            if lower <= row["bid"] <= upper
+            and not math.isclose(row["bid"], round(row["bid"]))
+        ]
+        selected = max(
+            eligible, key=lambda row: row["unconditional_utility_v1500"]
+        )["bid"]
+        rule = "best non-integer candidate within the 99% smoothed-utility plateau"
+    return {"bid": selected, "rule": rule, "smoothed_grid": smooth}
+
+
 def write_csv(path: Path, rows):
     if not rows:
         return
@@ -399,6 +424,11 @@ def main():
               "<repository>/data/results."),
     )
     parser.add_argument(
+        "--participants", type=int, default=REFERENCE_N,
+        help=("Number of bids for the target item. Defaults to the final "
+              "public LOT 18 count."),
+    )
+    parser.add_argument(
         "--upper-strategy-share", type=float,
         help=("Override the illustrative upper-price strategy share. This is "
               "a scenario input, not an estimated audience demographic."),
@@ -418,6 +448,8 @@ def main():
     else:
         out = args.output_dir.expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)
+    if args.participants < 2:
+        parser.error("--participants must be at least 2")
     base = Scenario()
     if args.upper_strategy_share is not None:
         base = replace(base, upper_strategy_share=args.upper_strategy_share)
@@ -446,10 +478,10 @@ def main():
     main_result = None
     if args.section in ("all", "main"):
         print(f"illustrative fine grid: R={r_fine}", flush=True)
-        main_result = run_once(25_000, r_fine, base, fine, 20260901)
+        main_result = run_once(args.participants, r_fine, base, fine, 20260901)
         write_csv(out / "illustrative_fine_grid.csv", main_result["rows"])
         print(f"illustrative requested quotes: R={r_requested}", flush=True)
-        requested_result = run_once(25_000, r_requested, base,
+        requested_result = run_once(args.participants, r_requested, base,
                                     DEFAULT_CANDIDATES, 20260902)
         write_csv(out / "illustrative_requested_quotes.csv",
                   requested_result["rows"])
@@ -459,7 +491,7 @@ def main():
     n_candidates = np.round(np.arange(164.50, 164.951, 0.01), 2).tolist()
     n_rows = []
     if args.section in ("all", "n"):
-        for idx, n in enumerate([10_000, 12_500, 14_000, 20_000, 25_000, 30_000, 50_000]):
+        for idx, n in enumerate([10_000, REFERENCE_N, 14_000, 20_000, 25_000, 30_000, 50_000]):
             print(f"N scenario: N={n}, R={n_reps}", flush=True)
             rr = run_once(n, n_reps, base, n_candidates, 1100 + idx)
             br = best_row(rr)
@@ -476,7 +508,7 @@ def main():
     if args.section in ("all", "n"):
         for idx, reps in enumerate([10_000, 25_000, 50_000]):
             print(f"convergence: R={reps}", flush=True)
-            rr = run_once(25_000, reps, base, DEFAULT_CANDIDATES, 2100 + idx)
+            rr = run_once(REFERENCE_N, reps, base, DEFAULT_CANDIDATES, 2100 + idx)
             br = best_row(rr)
             conv_rows.append({
                 "reps": reps, "mean": rr["mean_mean"], "mean_sd": rr["mean_sd"],
@@ -544,7 +576,7 @@ def main():
         illustrative_summary = None
     else:
         illustrative_summary = {
-            "N": 25_000,
+            "N": args.participants,
             "fine_grid_reps": r_fine,
             "requested_quote_reps": r_requested,
             "mean": main_result["mean_mean"],
@@ -553,6 +585,7 @@ def main():
             "analytical_mean": scenario_expected_mean(base),
             "best_fine": best_row(main_result),
             "smoothed_choice": smoothed_choice(main_result["rows"]),
+            "operational_choice": operational_choice(base, main_result["rows"]),
             "component_probs": main_result["component_probs"],
         }
     summary = {
