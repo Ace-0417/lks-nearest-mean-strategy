@@ -59,6 +59,20 @@ DEFAULT_CANDIDATES = [
 # Final public count shown for LOT 18 after the activity deadline.
 REFERENCE_N = 12_368
 
+# The cent grid is localized in two stages.  The broad economic domain spans
+# 5%-20% of the CNY 1,500 reference price.  A 0.13 phase shift keeps the
+# coarse pass away from whole-yuan and half-yuan focal prices; it is a region
+# locator, not the final action grid.  The final pass evaluates every cent.
+VALUE_REFERENCE = 1_500.0
+COARSE_LOWER_RATE = 0.05
+COARSE_UPPER_RATE = 0.20
+COARSE_PHASE = 0.13
+COARSE_STEP = 0.25
+COARSE_PLATEAU_FRACTION = 0.90
+FINE_HALF_WIDTH = 1.00
+FINE_STEP = 0.01
+BOUNDARY_RELATIVE_UTILITY_MAX = 0.50
+
 
 def norm_cdf(x: np.ndarray) -> np.ndarray:
     """Fast vector normal CDF, max absolute error about 7.5e-8."""
@@ -106,6 +120,130 @@ def scenario_expected_mean(m: Scenario) -> float:
         np.dot(m.shared_weights, centers) + shift,
     ])
     return float(probs @ component_means)
+
+
+def predictive_variance_decomposition(n_total: int, m: Scenario) -> dict:
+    """Approximate mean variance from common and idiosyncratic uncertainty.
+
+    This matches the aggregate generator before cent/integer heaping.  The
+    common Dirichlet environment does not average away with a large N, while
+    conditional individual dispersion does at the usual 1/N rate.
+    """
+    n_other = n_total - 1
+    probs = component_probs(m)
+    mu_lower, mu_upper, centers, shift = transformed_parameters(m)
+    base_w = np.asarray(m.shared_weights, dtype=np.float64)
+    shared_mean = float(base_w @ centers)
+    center_variance = float(base_w @ (centers - shared_mean) ** 2)
+    alpha0 = max(1e-6, 1.0 / m.rho_shared - 1.0)
+    shared_mean_variance = center_variance / (alpha0 + 1.0)
+    shared_share = float(probs[2] + probs[3])
+    common_variance = shared_share ** 2 * shared_mean_variance
+
+    # E[Var(shared bid | Dirichlet weights)].
+    shared_conditional_variance = (
+        center_variance - shared_mean_variance
+        + (1.0 - m.exact_focus_share) * m.sigma_shared ** 2
+    )
+    expected_component_variances = np.array([
+        m.sd_lower ** 2,
+        m.sd_upper ** 2,
+        shared_conditional_variance,
+        shared_conditional_variance,
+    ])
+    expected_squared_means = np.array([
+        mu_lower ** 2,
+        mu_upper ** 2,
+        shared_mean ** 2 + shared_mean_variance,
+        (shared_mean + shift) ** 2 + shared_mean_variance,
+    ])
+    population_mean = scenario_expected_mean(m)
+    expected_population_mean_squared = population_mean ** 2 + common_variance
+    conditional_bid_variance = float(
+        probs @ (expected_component_variances + expected_squared_means)
+        - expected_population_mean_squared
+    )
+    idiosyncratic_mean_variance = conditional_bid_variance / n_other
+    total_variance = common_variance + idiosyncratic_mean_variance
+    return {
+        "common_signal_variance": common_variance,
+        "common_signal_sd": math.sqrt(common_variance),
+        "idiosyncratic_mean_variance": idiosyncratic_mean_variance,
+        "idiosyncratic_mean_sd": math.sqrt(idiosyncratic_mean_variance),
+        "total_variance": total_variance,
+        "total_sd": math.sqrt(total_variance),
+        "common_variance_share": common_variance / total_variance,
+        "note": "aggregate approximation before cent/integer heaping",
+    }
+
+
+def inclusive_grid(lower: float, upper: float, step: float) -> list[float]:
+    """Build an inclusive decimal grid without cumulative arange drift."""
+    count = int(round((upper - lower) / step))
+    return np.round(lower + step * np.arange(count + 1), 2).tolist()
+
+
+def coarse_localization_grid(value_ref: float = VALUE_REFERENCE) -> list[float]:
+    """Phase-shifted broad grid used only to locate the objective region."""
+    lower = value_ref * COARSE_LOWER_RATE + COARSE_PHASE
+    upper = value_ref * COARSE_UPPER_RATE + COARSE_PHASE
+    return inclusive_grid(lower, upper, COARSE_STEP)
+
+
+def snapped_half_yuan_center(price: float) -> float:
+    """Snap a coarse location to the nearest CNY 0.50 for an auditable window."""
+    return round(round(price * 2.0) / 2.0, 2)
+
+
+def coarse_peak_plateau(rows, fraction: float = COARSE_PLATEAU_FRACTION):
+    """Return the contiguous near-optimal coarse region containing its peak."""
+    utility = np.asarray(
+        [row["unconditional_utility_v1500"] for row in rows], dtype=np.float64
+    )
+    best_index = int(np.argmax(utility))
+    best_utility = float(utility[best_index])
+    threshold = fraction * best_utility
+    left_index = best_index
+    right_index = best_index
+    while left_index > 0 and utility[left_index - 1] >= threshold:
+        left_index -= 1
+    while right_index + 1 < len(rows) and utility[right_index + 1] >= threshold:
+        right_index += 1
+    lower = float(rows[left_index]["bid"])
+    upper = float(rows[right_index]["bid"])
+    return {
+        "fraction": fraction,
+        "lower": lower,
+        "upper": upper,
+        "midpoint": round((lower + upper) / 2.0, 3),
+        "points": right_index - left_index + 1,
+    }
+
+
+def local_fine_grid(center: float, half_width: float) -> list[float]:
+    return inclusive_grid(center - half_width, center + half_width, FINE_STEP)
+
+
+def fine_boundary_audit(rows, threshold: float = BOUNDARY_RELATIVE_UTILITY_MAX):
+    """Check that a local optimum is interior and both edges have decayed."""
+    best = max(rows, key=lambda row: row["unconditional_utility_v1500"])
+    left = rows[0]
+    right = rows[-1]
+    interior = left["bid"] < best["bid"] < right["bid"]
+    passed = (
+        interior
+        and left["relative_utility"] < threshold
+        and right["relative_utility"] < threshold
+    )
+    return {
+        "left_bid": left["bid"],
+        "left_relative_utility": left["relative_utility"],
+        "right_bid": right["bid"],
+        "right_relative_utility": right["relative_utility"],
+        "interior_best": interior,
+        "threshold": threshold,
+        "passed": passed,
+    }
 
 
 def independent_cdf(k_cent: np.ndarray, mu: float, sd: float,
@@ -194,7 +332,7 @@ def tie_factor_poisson(lam: np.ndarray) -> np.ndarray:
 
 
 def score_candidates(worlds, n_total: int, m: Scenario, candidates,
-                     value_ref: float = 1500.0):
+                     value_ref: float = VALUE_REFERENCE):
     """Rao-Blackwellized nearest-mean win probabilities for fixed bids."""
     n_other = n_total - 1
     counts = worlds["counts"].astype(np.float64)
@@ -234,20 +372,25 @@ def score_candidates(worlds, n_total: int, m: Scenario, candidates,
         win_weight = p_no_closer * tie_factor_poisson(lam_eq_cond)
 
         p_win = float(np.mean(win_weight))
+        p_win_se = float(np.std(win_weight, ddof=1) / math.sqrt(reps))
         if p_win > 0:
             mean_if_win = float(np.sum(win_weight * final_mean) / np.sum(win_weight))
             cond_surplus = value_ref - mean_if_win
         else:
             mean_if_win = float("nan")
             cond_surplus = float("nan")
-        uncond_utility = float(np.mean(win_weight * (value_ref - final_mean)))
+        utility_draw = win_weight * (value_ref - final_mean)
+        uncond_utility = float(np.mean(utility_draw))
+        utility_se = float(np.std(utility_draw, ddof=1) / math.sqrt(reps))
         rows.append({
             "bid": round(price, 2),
             "p_win": p_win,
             "p_win_pct": 100.0 * p_win,
+            "p_win_pct_mc_se": 100.0 * p_win_se,
             "mean_if_win": mean_if_win,
             "conditional_surplus_v1500": cond_surplus,
             "unconditional_utility_v1500": uncond_utility,
+            "utility_v1500_mc_se": utility_se,
         })
     best = max(r["unconditional_utility_v1500"] for r in rows)
     for r in rows:
@@ -459,26 +602,91 @@ def main():
         base = replace(base, anchor_scale=args.anchor_scale)
     component_probs(base)  # validate the selected scenario before simulation
 
-    # Preserve the published default grid, but recenter it when a scenario
-    # parameter is overridden so alternatives are not evaluated at a boundary.
-    scenario_overridden = any((
-        args.upper_strategy_share is not None,
-        args.shared_signal_share is not None,
-        args.anchor_scale is not None,
-    ))
-    if scenario_overridden:
-        fine_center = round(scenario_expected_mean(base), 2)
-        fine = np.round(
-            np.arange(fine_center - 1.0, fine_center + 1.001, 0.01), 2
-        ).tolist()
-    else:
-        fine = np.round(np.arange(163.50, 165.501, 0.01), 2).tolist()
+    r_coarse = 10_000 if args.quick else 30_000
     r_fine = 50_000 if args.quick else 180_000
     r_requested = 80_000 if args.quick else 600_000
+    coarse_result = None
     main_result = None
+    search_audit = None
     if args.section in ("all", "main"):
-        print(f"illustrative fine grid: R={r_fine}", flush=True)
-        main_result = run_once(args.participants, r_fine, base, fine, 20260901)
+        coarse = coarse_localization_grid()
+        print(
+            f"broad coarse grid: {coarse[0]:.2f}-{coarse[-1]:.2f}, "
+            f"step={COARSE_STEP:.2f}, R={r_coarse}", flush=True,
+        )
+        coarse_result = run_once(
+            args.participants, r_coarse, base, coarse, 20260831
+        )
+        write_csv(out / "global_coarse_grid.csv", coarse_result["rows"])
+        coarse_best = best_row(coarse_result)
+        coarse_plateau = coarse_peak_plateau(coarse_result["rows"])
+        fine_center = snapped_half_yuan_center(coarse_plateau["midpoint"])
+
+        # A predeclared edge guardrail prevents a convenient but truncated
+        # local window from being accepted.  Expand symmetrically when either
+        # edge retains at least half of the interior peak utility.
+        max_expansions = 3
+        for expansions in range(max_expansions + 1):
+            fine_half_width = FINE_HALF_WIDTH + expansions
+            fine = local_fine_grid(fine_center, fine_half_width)
+            print(
+                f"fine grid: {fine[0]:.2f}-{fine[-1]:.2f}, "
+                f"step={FINE_STEP:.2f}, R={r_fine}", flush=True,
+            )
+            main_result = run_once(
+                args.participants, r_fine, base, fine, 20260901
+            )
+            boundary = fine_boundary_audit(main_result["rows"])
+            if boundary["passed"]:
+                break
+        else:
+            raise RuntimeError(
+                "Fine-grid boundary audit failed after three expansions; "
+                "review the declared broad search domain and scenario."
+            )
+
+        search_audit = {
+            "declared_economic_domain": {
+                "reference_value": VALUE_REFERENCE,
+                "lower_rate": COARSE_LOWER_RATE,
+                "upper_rate": COARSE_UPPER_RATE,
+                "rationale": (
+                    "broad localization domain around the public one-tenth "
+                    "anchor; not an assumed feasible action set"
+                ),
+            },
+            "coarse_grid": {
+                "lower": coarse[0],
+                "upper": coarse[-1],
+                "step": COARSE_STEP,
+                "phase_offset": COARSE_PHASE,
+                "reps": r_coarse,
+                "best_bid": coarse_best["bid"],
+                "best_relative_utility": coarse_best["relative_utility"],
+                "near_optimal_plateau": coarse_plateau,
+                "left_boundary_relative_utility": (
+                    coarse_result["rows"][0]["relative_utility"]
+                ),
+                "right_boundary_relative_utility": (
+                    coarse_result["rows"][-1]["relative_utility"]
+                ),
+            },
+            "fine_grid": {
+                "center_rule": (
+                    "nearest CNY 0.50 to the midpoint of the contiguous "
+                    "90%-of-peak coarse plateau"
+                ),
+                "center": fine_center,
+                "initial_half_width": FINE_HALF_WIDTH,
+                "actual_half_width": fine_half_width,
+                "lower": fine[0],
+                "upper": fine[-1],
+                "step": FINE_STEP,
+                "reps": r_fine,
+                "expansions": expansions,
+                "boundary_audit": boundary,
+            },
+        }
         write_csv(out / "illustrative_fine_grid.csv", main_result["rows"])
         print(f"illustrative requested quotes: R={r_requested}", flush=True)
         requested_result = run_once(args.participants, r_requested, base,
@@ -516,7 +724,7 @@ def main():
             })
         write_csv(out / "replication_convergence.csv", conv_rows)
 
-    # One-way sensitivity.  Search a wider 0.05 grid, then refine +/-0.10 at cents.
+    # One-way sensitivity. Search a +/-1.25 range at 0.10, then refine cents.
     sens_reps = 8_000 if args.quick else 30_000
     sens_rows = []
 
@@ -583,27 +791,54 @@ def main():
             "mean_sd": main_result["mean_sd"],
             "mean_95_interval": [main_result["mean_q025"], main_result["mean_q975"]],
             "analytical_mean": scenario_expected_mean(base),
+            "predictive_variance_decomposition": (
+                predictive_variance_decomposition(args.participants, base)
+            ),
+            "search_audit": search_audit,
             "best_fine": best_row(main_result),
             "smoothed_choice": smoothed_choice(main_result["rows"]),
             "operational_choice": operational_choice(base, main_result["rows"]),
             "component_probs": main_result["component_probs"],
         }
+    summary_path = out / "simulation_summary.json"
+    existing_summary = {}
+    if summary_path.exists():
+        try:
+            existing_summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            existing_summary = {}
     summary = {
-        "illustrative_scenario": {
-            **(illustrative_summary or {})
-        } if illustrative_summary else None,
-        "participants": n_rows,
-        "convergence": conv_rows,
-        "sensitivity": sens_rows,
+        "illustrative_scenario": (
+            illustrative_summary
+            if illustrative_summary is not None
+            else existing_summary.get("illustrative_scenario")
+        ),
+        "participants": (
+            n_rows
+            if args.section in ("all", "n")
+            else existing_summary.get("participants", [])
+        ),
+        "convergence": (
+            conv_rows
+            if args.section in ("all", "n")
+            else existing_summary.get("convergence", [])
+        ),
+        "sensitivity": (
+            sens_rows
+            if args.section in ("all", "sensitivity")
+            else existing_summary.get("sensitivity", [])
+        ),
         "method_note": (
             "Monte Carlo samples latent strategy counts, shared-signal Dirichlet "
             "weights, and aggregate bid sums. Component shares are scenario "
             "inputs, not measured audience demographics. Conditional closer-bid "
             "probabilities use the discrete bid CDF; tie multiplicity uses a "
-            "Poisson approximation."
+            "Poisson approximation. A phase-shifted broad grid localizes the "
+            "contiguous coarse near-optimal plateau before the cent grid is "
+            "constructed and boundary-audited."
         ),
     }
-    (out / "simulation_summary.json").write_text(
+    summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(json.dumps(summary["illustrative_scenario"], ensure_ascii=False,

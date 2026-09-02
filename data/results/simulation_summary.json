@@ -10,13 +10,71 @@
       165.86621134593446
     ],
     "analytical_mean": 164.74200000000005,
+    "predictive_variance_decomposition": {
+      "common_signal_variance": 0.12000000000000002,
+      "common_signal_sd": 0.3464101615137755,
+      "idiosyncratic_mean_variance": 0.205594035416834,
+      "idiosyncratic_mean_sd": 0.45342478474035136,
+      "total_variance": 0.325594035416834,
+      "total_sd": 0.570608478220254,
+      "common_variance_share": 0.3685571200540356,
+      "note": "aggregate approximation before cent/integer heaping"
+    },
+    "search_audit": {
+      "declared_economic_domain": {
+        "reference_value": 1500.0,
+        "lower_rate": 0.05,
+        "upper_rate": 0.2,
+        "rationale": "broad localization domain around the public one-tenth anchor; not an assumed feasible action set"
+      },
+      "coarse_grid": {
+        "lower": 75.13,
+        "upper": 300.13,
+        "step": 0.25,
+        "phase_offset": 0.13,
+        "reps": 30000,
+        "best_bid": 164.63,
+        "best_relative_utility": 1.0,
+        "near_optimal_plateau": {
+          "fraction": 0.9,
+          "lower": 164.38,
+          "upper": 164.88,
+          "midpoint": 164.63,
+          "points": 3
+        },
+        "left_boundary_relative_utility": 0.0,
+        "right_boundary_relative_utility": 8.7e-322
+      },
+      "fine_grid": {
+        "center_rule": "nearest CNY 0.50 to the midpoint of the contiguous 90%-of-peak coarse plateau",
+        "center": 164.5,
+        "initial_half_width": 1.0,
+        "actual_half_width": 1.0,
+        "lower": 163.5,
+        "upper": 165.5,
+        "step": 0.01,
+        "reps": 180000,
+        "expansions": 0,
+        "boundary_audit": {
+          "left_bid": 163.5,
+          "left_relative_utility": 0.08857929463655217,
+          "right_bid": 165.5,
+          "right_relative_utility": 0.40508340055629966,
+          "interior_best": true,
+          "threshold": 0.5,
+          "passed": true
+        }
+      }
+    },
     "best_fine": {
       "bid": 164.71,
       "p_win": 0.0061465517750539335,
       "p_win_pct": 0.6146551775053933,
+      "p_win_pct_mc_se": 0.012380116918484202,
       "mean_if_win": 164.7099425007373,
       "conditional_surplus_v1500": 1335.2900574992627,
       "unconditional_utility_v1500": 8.207429473133962,
+      "utility_v1500_mc_se": 0.16531046338210184,
       "relative_utility": 1.0
     },
     "smoothed_choice": {
@@ -56,8 +114,356 @@
       0.091
     ]
   },
-  "participants": [],
-  "convergence": [],
-  "sensitivity": [],
-  "method_note": "Monte Carlo samples latent strategy counts, shared-signal Dirichlet weights, and aggregate bid sums. Component shares are scenario inputs, not measured audience demographics. Conditional closer-bid probabilities use the discrete bid CDF; tie multiplicity uses a Poisson approximation."
+  "participants": [
+    {
+      "N": 10000,
+      "reps": 80000,
+      "mean": 164.74158493541591,
+      "mean_sd": 0.6140799739799422,
+      "best_bid": 164.66,
+      "p_win_pct": 0.7332637122389875,
+      "utility_v1500": 9.791565517375325
+    },
+    {
+      "N": 12368,
+      "reps": 80000,
+      "mean": 164.74155893505338,
+      "mean_sd": 0.5700392650431569,
+      "best_bid": 164.91,
+      "p_win_pct": 0.6364709211273374,
+      "utility_v1500": 8.497459490445411
+    },
+    {
+      "N": 14000,
+      "reps": 80000,
+      "mean": 164.74188515250674,
+      "mean_sd": 0.5476990154399454,
+      "best_bid": 164.83,
+      "p_win_pct": 0.5797952899940604,
+      "utility_v1500": 7.741253561034085
+    },
+    {
+      "N": 20000,
+      "reps": 80000,
+      "mean": 164.74235766443115,
+      "mean_sd": 0.49720445326176477,
+      "best_bid": 164.69,
+      "p_win_pct": 0.4582982669465627,
+      "utility_v1500": 6.119702728346482
+    },
+    {
+      "N": 25000,
+      "reps": 80000,
+      "mean": 164.74308172244295,
+      "mean_sd": 0.47024219635165965,
+      "best_bid": 164.89,
+      "p_win_pct": 0.37880488694222864,
+      "utility_v1500": 5.057461898462451
+    },
+    {
+      "N": 30000,
+      "reps": 80000,
+      "mean": 164.741592974335,
+      "mean_sd": 0.4510026756834483,
+      "best_bid": 164.76,
+      "p_win_pct": 0.3363324471451486,
+      "utility_v1500": 4.490845551840231
+    },
+    {
+      "N": 50000,
+      "reps": 80000,
+      "mean": 164.74105598873496,
+      "mean_sd": 0.4126877759469922,
+      "best_bid": 164.7,
+      "p_win_pct": 0.2184490847117372,
+      "utility_v1500": 2.916950861120103
+    }
+  ],
+  "convergence": [
+    {
+      "reps": 10000,
+      "mean": 164.74796303516115,
+      "mean_sd": 0.5731562697385784,
+      "best_requested_bid": 164.81,
+      "p_win_pct": 0.7001272941367475
+    },
+    {
+      "reps": 25000,
+      "mean": 164.73934852042677,
+      "mean_sd": 0.5696953125407501,
+      "best_requested_bid": 164.8,
+      "p_win_pct": 0.6253644424239114
+    },
+    {
+      "reps": 50000,
+      "mean": 164.74640523997337,
+      "mean_sd": 0.5700765490260289,
+      "best_requested_bid": 164.74,
+      "p_win_pct": 0.6009354404911224
+    }
+  ],
+  "sensitivity": [
+    {
+      "parameter": "upper_strategy_share",
+      "value": 0.25,
+      "population_mean": 160.92934945108658,
+      "mean_sd": 0.46311202259790823,
+      "optimal_bid": 161.03,
+      "p_win_pct": 0.4113837566807346,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_strategy_share",
+      "value": 0.3,
+      "population_mean": 162.83821043685992,
+      "mean_sd": 0.46580487344713883,
+      "optimal_bid": 162.86,
+      "p_win_pct": 0.4213463813392054,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_strategy_share",
+      "value": 0.35,
+      "population_mean": 164.74250168528806,
+      "mean_sd": 0.4670546085842762,
+      "optimal_bid": 164.83,
+      "p_win_pct": 0.3866671983771471,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_strategy_share",
+      "value": 0.4,
+      "population_mean": 166.65098349018044,
+      "mean_sd": 0.47429612231622575,
+      "optimal_bid": 166.8,
+      "p_win_pct": 0.3755573626577327,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_strategy_share",
+      "value": 0.45,
+      "population_mean": 168.55823615084464,
+      "mean_sd": 0.4775003498347934,
+      "optimal_bid": 168.48,
+      "p_win_pct": 0.3696185080164238,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "shared_signal_share",
+      "value": 0.1,
+      "population_mean": 164.7726743991787,
+      "mean_sd": 0.382221067575566,
+      "optimal_bid": 164.74,
+      "p_win_pct": 0.6259781788759045,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "shared_signal_share",
+      "value": 0.15,
+      "population_mean": 164.76036920101978,
+      "mean_sd": 0.41987181933807805,
+      "optimal_bid": 164.71,
+      "p_win_pct": 0.49317436908062107,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "shared_signal_share",
+      "value": 0.2,
+      "population_mean": 164.74248653409634,
+      "mean_sd": 0.46763078463058694,
+      "optimal_bid": 164.81,
+      "p_win_pct": 0.3904260953995532,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "shared_signal_share",
+      "value": 0.25,
+      "population_mean": 164.72551996038172,
+      "mean_sd": 0.5308951149269386,
+      "optimal_bid": 164.57,
+      "p_win_pct": 0.3240086456418771,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "shared_signal_share",
+      "value": 0.3,
+      "population_mean": 164.70837442649136,
+      "mean_sd": 0.5998120468933766,
+      "optimal_bid": 164.86,
+      "p_win_pct": 0.2644804339018619,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "rho_shared",
+      "value": "low",
+      "population_mean": 164.7403845014833,
+      "mean_sd": 0.35578041851577613,
+      "optimal_bid": 164.74,
+      "p_win_pct": 0.5159286687353404,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "rho_shared",
+      "value": "medium",
+      "population_mean": 164.7411226757265,
+      "mean_sd": 0.468477685918298,
+      "optimal_bid": 164.69,
+      "p_win_pct": 0.38921044943359934,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "rho_shared",
+      "value": "high",
+      "population_mean": 164.7392166763975,
+      "mean_sd": 0.676907219903137,
+      "optimal_bid": 164.74,
+      "p_win_pct": 0.29567124966845587,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "anchor_response",
+      "value": "low",
+      "population_mean": 169.16608022598513,
+      "mean_sd": 0.5604447836500863,
+      "optimal_bid": 169.3,
+      "p_win_pct": 0.37732713467130974,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "anchor_response",
+      "value": "medium",
+      "population_mean": 164.74495987826796,
+      "mean_sd": 0.47138369259038715,
+      "optimal_bid": 164.65,
+      "p_win_pct": 0.3667453861859471,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "anchor_response",
+      "value": "high",
+      "population_mean": 159.58290496083518,
+      "mean_sd": 0.3801856042999304,
+      "optimal_bid": 159.54,
+      "p_win_pct": 0.40880258078927384,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_independent_mean",
+      "value": 180.0,
+      "population_mean": 160.60364360451487,
+      "mean_sd": 0.4609114883501432,
+      "optimal_bid": 160.58,
+      "p_win_pct": 0.45987741189002973,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_independent_mean",
+      "value": 188.0,
+      "population_mean": 162.6732073107229,
+      "mean_sd": 0.4696431114388285,
+      "optimal_bid": 162.76,
+      "p_win_pct": 0.4127302740497679,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_independent_mean",
+      "value": 196.0,
+      "population_mean": 164.7384626240791,
+      "mean_sd": 0.4717141275144257,
+      "optimal_bid": 164.75,
+      "p_win_pct": 0.3826440970085838,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_independent_mean",
+      "value": 204.0,
+      "population_mean": 166.8215239948779,
+      "mean_sd": 0.4797336385388234,
+      "optimal_bid": 166.86,
+      "p_win_pct": 0.39117655742393254,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "upper_independent_mean",
+      "value": 212.0,
+      "population_mean": 168.88549913213308,
+      "mean_sd": 0.4833594025804728,
+      "optimal_bid": 168.82,
+      "p_win_pct": 0.37645749165681525,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "lower_independent_mean",
+      "value": 136.0,
+      "population_mean": 158.25354007769226,
+      "mean_sd": 0.4842351322349333,
+      "optimal_bid": 158.29,
+      "p_win_pct": 0.4861875699381466,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "lower_independent_mean",
+      "value": 142.0,
+      "population_mean": 161.49907170883176,
+      "mean_sd": 0.47220337726735184,
+      "optimal_bid": 161.65,
+      "p_win_pct": 0.45414155548119706,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "lower_independent_mean",
+      "value": 148.0,
+      "population_mean": 164.7452117524082,
+      "mean_sd": 0.47159491582681323,
+      "optimal_bid": 164.78,
+      "p_win_pct": 0.4049864790765341,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "lower_independent_mean",
+      "value": 154.0,
+      "population_mean": 167.98946260529536,
+      "mean_sd": 0.46516765945769095,
+      "optimal_bid": 167.94,
+      "p_win_pct": 0.37636247520733146,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "lower_independent_mean",
+      "value": 160.0,
+      "population_mean": 171.23753052541267,
+      "mean_sd": 0.46242732351608756,
+      "optimal_bid": 171.18,
+      "p_win_pct": 0.3780462708343911,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "sigma_shared",
+      "value": 2.0,
+      "population_mean": 164.73790546711953,
+      "mean_sd": 0.4705014867273858,
+      "optimal_bid": 164.59,
+      "p_win_pct": 0.31862112369737655,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "sigma_shared",
+      "value": 6.0,
+      "population_mean": 164.74229314929212,
+      "mean_sd": 0.4691752553487757,
+      "optimal_bid": 164.87,
+      "p_win_pct": 0.3894219581056934,
+      "relative_note": "one-way change; all other parameters illustrative"
+    },
+    {
+      "parameter": "sigma_shared",
+      "value": 12.0,
+      "population_mean": 164.74142394735452,
+      "mean_sd": 0.4706743834126207,
+      "optimal_bid": 164.89,
+      "p_win_pct": 0.4540554575013271,
+      "relative_note": "one-way change; all other parameters illustrative"
+    }
+  ],
+  "method_note": "Monte Carlo samples latent strategy counts, shared-signal Dirichlet weights, and aggregate bid sums. Component shares are scenario inputs, not measured audience demographics. Conditional closer-bid probabilities use the discrete bid CDF; tie multiplicity uses a Poisson approximation. A phase-shifted broad grid localizes the contiguous coarse near-optimal plateau before the cent grid is constructed and boundary-audited."
 }

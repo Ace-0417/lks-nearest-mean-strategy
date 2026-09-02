@@ -1,4 +1,4 @@
-parameter,value,population_mean,mean_sd,optimal_bid,p_win_pct,relative_note
+﻿parameter,value,population_mean,mean_sd,optimal_bid,p_win_pct,relative_note
 upper_strategy_share,0.25,160.92934945108658,0.46311202259790823,161.03,0.4113837566807346,one-way change; all other parameters illustrative
 upper_strategy_share,0.3,162.83821043685992,0.46580487344713883,162.86,0.4213463813392054,one-way change; all other parameters illustrative
 upper_strategy_share,0.35,164.74250168528806,0.4670546085842762,164.83,0.3866671983771471,one-way change; all other parameters illustrative
