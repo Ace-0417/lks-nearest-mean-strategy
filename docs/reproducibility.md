@@ -48,12 +48,25 @@ python src/lks_tennis_mc.py --section direct --output-dir data/reproduced-direct
 
 程序使用固定随机种子；在相同 NumPy 环境中应得到可重复结果。不同 NumPy 版本或平台的随机数实现、浮点运算可能造成细微差异。
 
+示例场景的潜在策略比例不是受众统计。可在命令行覆盖它们，而不修改源码：
+
+```bash
+python src/lks_tennis_mc.py --quick --section main \
+  --upper-strategy-share 0.30 \
+  --shared-signal-share 0.10 \
+  --anchor-scale 0.80 \
+  --output-dir work/alternative-scenario
+```
+
+这些参数分别表示较高报价组件占比、共同信号组件占比和相对公开价格锚的偏离尺度。共同信号可以来自热门讨论、搜索或相似工具输出，不能解释成经测量的 AI 使用率。
+指定任一覆盖参数时，程序会把逐分细网格自动移到该场景的理论均值附近；默认示例场景仍使用 163.50–165.50 元网格，以保持仓库参考结果可复现。
+
 ## 3. 输出对应关系
 
 | 文件 | 含义 |
 |---|---|
-| `baseline_fine_grid.csv` | 163.50–165.50 元的单次报价分币网格 |
-| `baseline_requested_quotes.csv` | 指定单次候选报价对比 |
+| `illustrative_fine_grid.csv` | 示例场景下 163.50–165.50 元的单次报价分币网格 |
+| `illustrative_requested_quotes.csv` | 示例场景下的指定单次候选报价对比 |
 | `participants_sensitivity.csv` | 总参与人数变化下的单次报价结果 |
 | `replication_convergence.csv` | 不同重复次数的收敛检查 |
 | `one_way_sensitivity.csv` | 参数单因素敏感性 |
@@ -63,7 +76,7 @@ python src/lks_tennis_mc.py --section direct --output-dir data/reproduced-direct
 
 1. 阅读 `reports/full-analysis.md` 中的“事实、先验、假设”分层。
 2. 用 `--quick --section main` 检查环境。
-3. 对照 `baseline_fine_grid.csv` 检查 164.7 元附近的平台与 165.00 的拥挤效应。
+3. 对照 `illustrative_fine_grid.csv` 检查 164.7 元附近的平台与 165.00 的拥挤效应。
 4. 对照 `participants_sensitivity.csv` 确认人数增加时单次报价中标率下降。
 5. 改动一个模型参数并写入新目录，观察结论对假设的敏感程度。
 

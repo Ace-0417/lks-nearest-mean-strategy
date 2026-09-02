@@ -21,7 +21,7 @@ def read_csv(name: str) -> list[dict[str, str]]:
 
 
 def make_svg() -> str:
-    fine = read_csv("baseline_fine_grid.csv")
+    fine = read_csv("illustrative_fine_grid.csv")
     quote_points = [
         (float(row["bid"]), float(row["p_win_pct"]))
         for row in fine
@@ -37,15 +37,15 @@ def make_svg() -> str:
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">单次报价核心模拟结果</title>',
-        '<desc id="desc">左图显示报价与单次中标率，165元处因整数拥挤明显下跌；右图显示参与人数增加时最佳单次报价的模型中标率下降。</desc>',
+        '<title id="title">示例场景下的单次报价模拟结果</title>',
+        '<desc id="desc">左图显示示例场景中的报价与单次中标率，165元处因整数拥挤明显下跌；右图显示参与人数增加时最佳单次报价的模型中标率下降。</desc>',
         '<style>',
         'text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#24292f}',
         '.title{font-size:26px;font-weight:600}.subtitle{font-size:17px;font-weight:600}.axis{font-size:13px;fill:#57606a}.value{font-size:13px;font-weight:600}.grid{stroke:#d8dee4;stroke-width:1}.frame{fill:#ffffff;stroke:#d0d7de;stroke-width:1}.line{fill:none;stroke:#1f6feb;stroke-width:3}.point{fill:#ffffff;stroke:#1f6feb;stroke-width:2}.focus{fill:#cf222e;stroke:#ffffff;stroke-width:1}',
         '</style>',
         '<rect width="1120" height="620" fill="#ffffff"/>',
-        '<text class="title" x="560" y="46" text-anchor="middle">单次报价核心模拟结果</text>',
-        '<text class="axis" x="560" y="72" text-anchor="middle">全部数值均为模型输出，不是现实活动的保证概率</text>',
+        '<text class="title" x="560" y="46" text-anchor="middle">示例场景下的单次报价模拟结果</text>',
+        '<text class="axis" x="560" y="72" text-anchor="middle">组件比例未经受众数据校准；数值不是现实活动的保证概率</text>',
         '<text class="subtitle" x="74" y="98">报价与单次中标率（N=25,000）</text>',
         '<text class="subtitle" x="630" y="98">参与人数与最佳单次报价中标率</text>',
         f'<rect class="frame" x="{left_x}" y="{top_y}" width="{panel_w}" height="{panel_h}"/>',
