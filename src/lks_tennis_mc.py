@@ -27,8 +27,9 @@ import numpy as np
 
 @dataclass(frozen=True)
 class Scenario:
-    # Illustrative calibration only; none of these shares are measured audience
-    # demographics.  They describe latent bidding strategies, not identities.
+    # The 0.35/0.20 defaults carry the user-supplied tennis-interest/AI priors
+    # into an auxiliary decision route.  They are proxies for latent bidding
+    # strategies, not measured audience demographics or verified identities.
     upper_strategy_share: float = 0.35
     shared_signal_share: float = 0.20
     shared_upper_ratio: float = 1.30
@@ -50,8 +51,8 @@ class Scenario:
 
 
 DEFAULT_CANDIDATES = [
-    160.00, 162.00, 163.00, 164.00, 164.50, 164.70, 164.75,
-    164.80, 164.81, 164.82, 164.83, 164.84, 164.85, 164.86,
+    160.00, 162.00, 163.00, 164.00, 164.50, 164.70, 164.74,
+    164.75, 164.80, 164.81, 164.82, 164.83, 164.84, 164.85, 164.86,
     164.90, 165.00, 166.00, 168.00, 170.00,
 ]
 
@@ -89,6 +90,19 @@ def transformed_parameters(m: Scenario):
     centers = anchor + k * (np.asarray(m.shared_centers) - anchor)
     upper_shift = k * m.shared_upper_shift
     return mu_lower, mu_upper, centers, upper_shift
+
+
+def scenario_expected_mean(m: Scenario) -> float:
+    """Analytical population mean implied by one selected scenario."""
+    mu_lower, mu_upper, centers, shift = transformed_parameters(m)
+    probs = component_probs(m)
+    component_means = np.array([
+        mu_lower,
+        mu_upper,
+        np.dot(m.shared_weights, centers),
+        np.dot(m.shared_weights, centers) + shift,
+    ])
+    return float(probs @ component_means)
 
 
 def independent_cdf(k_cent: np.ndarray, mu: float, sd: float,
@@ -259,6 +273,35 @@ def best_row(result):
     return max(result["rows"], key=lambda x: x["unconditional_utility_v1500"])
 
 
+def smoothed_choice(rows, window: int = 15):
+    """Choose a stable cent bid by smoothing adjacent Monte Carlo utilities."""
+    if window < 3 or window % 2 == 0 or window > len(rows):
+        raise ValueError("Smoothing window must be an odd integer within the grid")
+    bids = np.asarray([row["bid"] for row in rows], dtype=np.float64)
+    utility = np.asarray(
+        [row["unconditional_utility_v1500"] for row in rows],
+        dtype=np.float64,
+    )
+    smooth = np.convolve(utility, np.ones(window) / window, mode="valid")
+    half = window // 2
+    grid_indices = np.arange(half, len(rows) - half)
+    best_valid = int(np.argmax(smooth))
+    best_index = int(grid_indices[best_valid])
+    best_smooth = float(smooth[best_valid])
+
+    def near_interval(fraction: float) -> list[float]:
+        selected = bids[grid_indices[smooth >= fraction * best_smooth]]
+        return [round(float(selected.min()), 2), round(float(selected.max()), 2)]
+
+    return {
+        "window_cents": window,
+        "bid": round(float(bids[best_index]), 2),
+        "smoothed_utility_v1500": best_smooth,
+        "near_99pct": near_interval(0.99),
+        "near_97_5pct": near_interval(0.975),
+    }
+
+
 def write_csv(path: Path, rows):
     if not rows:
         return
@@ -392,15 +435,7 @@ def main():
         args.anchor_scale is not None,
     ))
     if scenario_overridden:
-        mu_lower, mu_upper, centers, shift = transformed_parameters(base)
-        probs = component_probs(base)
-        expected_mean = probs @ np.array([
-            mu_lower,
-            mu_upper,
-            np.dot(base.shared_weights, centers),
-            np.dot(base.shared_weights, centers) + shift,
-        ])
-        fine_center = round(float(expected_mean), 2)
+        fine_center = round(scenario_expected_mean(base), 2)
         fine = np.round(
             np.arange(fine_center - 1.0, fine_center + 1.001, 0.01), 2
         ).tolist()
@@ -454,14 +489,7 @@ def main():
     sens_rows = []
 
     def one_scenario(group, value, model, seed):
-        mu_lower, mu_upper, centers, shift = transformed_parameters(model)
-        p = component_probs(model)
-        expected_mean = p @ np.array([
-            mu_lower,
-            mu_upper,
-            np.dot(model.shared_weights, centers),
-            np.dot(model.shared_weights, centers) + shift,
-        ])
+        expected_mean = scenario_expected_mean(model)
         coarse = np.round(np.arange(max(80.0, expected_mean - 1.25),
                                     min(280.0, expected_mean + 1.251), 0.10), 2)
         worlds = draw_worlds(25_000, sens_reps, model, seed)
@@ -522,7 +550,9 @@ def main():
             "mean": main_result["mean_mean"],
             "mean_sd": main_result["mean_sd"],
             "mean_95_interval": [main_result["mean_q025"], main_result["mean_q975"]],
+            "analytical_mean": scenario_expected_mean(base),
             "best_fine": best_row(main_result),
+            "smoothed_choice": smoothed_choice(main_result["rows"]),
             "component_probs": main_result["component_probs"],
         }
     summary = {

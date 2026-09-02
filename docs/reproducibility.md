@@ -48,7 +48,7 @@ python src/lks_tennis_mc.py --section direct --output-dir data/reproduced-direct
 
 程序使用固定随机种子；在相同 NumPy 环境中应得到可重复结果。不同 NumPy 版本或平台的随机数实现、浮点运算可能造成细微差异。
 
-示例场景的潜在策略比例不是受众统计。可在命令行覆盖它们，而不修改源码：
+默认值对应报告中的辅助先验路线，不是受众统计。可在命令行覆盖它们，而不修改源码：
 
 ```bash
 python src/lks_tennis_mc.py --quick --section main \
@@ -58,15 +58,16 @@ python src/lks_tennis_mc.py --quick --section main \
   --output-dir work/alternative-scenario
 ```
 
-这些参数分别表示较高报价组件占比、共同信号组件占比和相对公开价格锚的偏离尺度。共同信号可以来自热门讨论、搜索或相似工具输出，不能解释成经测量的 AI 使用率。
-指定任一覆盖参数时，程序会把逐分细网格自动移到该场景的理论均值附近；默认示例场景仍使用 163.50–165.50 元网格，以保持仓库参考结果可复现。
+这些参数分别表示较高报价组件占比、共同信号组件占比和相对公开价格锚的偏离尺度。默认的 35% 与 20% 分别承接原始“网球兴趣者”和“AI 辅助者”先验，但在模型中只作为报价机制的代理参数。
+
+指定任一覆盖参数时，程序会把逐分细网格自动移到该场景的理论均值附近；默认路线仍使用 163.50–165.50 元网格，以保持仓库参考结果可复现。程序输出的 `smoothed_choice` 使用 15 个相邻分币的效用均值选择稳定中心。
 
 ## 3. 输出对应关系
 
 | 文件 | 含义 |
 |---|---|
-| `illustrative_fine_grid.csv` | 示例场景下 163.50–165.50 元的单次报价分币网格 |
-| `illustrative_requested_quotes.csv` | 示例场景下的指定单次候选报价对比 |
+| `illustrative_fine_grid.csv` | 辅助先验路线下 163.50–165.50 元的单次报价分币网格 |
+| `illustrative_requested_quotes.csv` | 辅助先验路线下的指定单次候选报价对比 |
 | `participants_sensitivity.csv` | 总参与人数变化下的单次报价结果 |
 | `replication_convergence.csv` | 不同重复次数的收敛检查 |
 | `one_way_sensitivity.csv` | 参数单因素敏感性 |
@@ -74,7 +75,7 @@ python src/lks_tennis_mc.py --quick --section main \
 
 ## 4. 推荐的复核顺序
 
-1. 阅读 `reports/full-analysis.md` 中的“事实、先验、假设”分层。
+1. 阅读 `reports/full-analysis.md` 中从辅助先验到 164.74 元的推导。
 2. 用 `--quick --section main` 检查环境。
 3. 对照 `illustrative_fine_grid.csv` 检查 164.7 元附近的平台与 165.00 的拥挤效应。
 4. 对照 `participants_sensitivity.csv` 确认人数增加时单次报价中标率下降。
